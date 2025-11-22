@@ -1,7 +1,7 @@
 // Daily Operations Report Scheduler
 // Runs every day at 9:00 AM
 
-BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+BACKEND_URL = "https://opsmind-backend.onrender.com";
 
 try
 {

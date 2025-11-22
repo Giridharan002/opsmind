@@ -1,7 +1,7 @@
 // Message Action: Flag Task at Risk
 // This allows users to flag a task mentioned in a message as at-risk
 
-BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+BACKEND_URL = "https://opsmind-backend.onrender.com";
 
 response = Map();
 

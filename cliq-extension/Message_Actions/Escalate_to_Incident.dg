@@ -1,7 +1,7 @@
 // Message Action: Escalate to Incident
 // This allows users to right-click a message and create an incident from it
 
-BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+BACKEND_URL = "https://opsmind-backend.onrender.com";
 
 response = Map();
 

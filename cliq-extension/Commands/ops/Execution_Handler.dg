@@ -1,5 +1,5 @@
-// Backend API URL - Replace with your deployed URL
-BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+// Backend API URL - Deployed on Render
+BACKEND_URL = "https://opsmind-backend.onrender.com";
 
 response = Map();
 
