@@ -66,12 +66,13 @@ class OpsController {
   async getOverload(req, res) {
     try {
       const overloaded = await TimeLog.findOverloaded();
-      const analysis = await aiEngine.analyzeOverload(overloaded);
+      // Temporarily disable AI analysis for faster response in Cliq
+      // const analysis = await aiEngine.analyzeOverload(overloaded);
 
       res.json({
         count: overloaded.length,
         users: overloaded,
-        ai_analysis: analysis,
+        // ai_analysis: analysis,
         timestamp: new Date().toISOString()
       });
     } catch (error) {

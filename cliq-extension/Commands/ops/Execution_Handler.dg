@@ -1,23 +1,12 @@
+
 // Backend API URL - Deployed on Render
 BACKEND_URL = "https://opsmind-backend.onrender.com";
-
+// Parse command arguments - 'arguments' is the text after /ops
+command = arguments.trim();
 response = Map();
-
 try 
 {
-	// Parse command arguments
-	command = arguments.get("command");
 	info "Command: " + command;
-	
-	bot = Map();
-	bot.put("name","OpsMind");
-	bot.put("image","https://i.imgur.com/OpsMind.png");
-	response.put("bot",bot);
-	
-	card = Map();
-	card.put("theme","modern-inline");
-	response.put("card",card);
-	
 	// Handle different commands
 	if(command == "status")
 	{
@@ -26,19 +15,18 @@ try
 		[
 			url: BACKEND_URL + "/ops/status"
 			type: GET
+			detailed: false
+			connection-timeout: 10000
 		];
-		info api_response;
-		
+		info "API Response: " + api_response;
 		summary = api_response.get("summary");
 		health_score = api_response.get("health_score");
-		
 		status_text = "📊 **Team Operations Status**\n\n";
 		status_text = status_text + "✅ Total Tasks: **" + summary.get("total_tasks") + "**\n";
 		status_text = status_text + "⚠️ At Risk: **" + summary.get("at_risk") + "**\n";
 		status_text = status_text + "⏰ Overdue: **" + summary.get("overdue") + "**\n";
 		status_text = status_text + "🔥 Incidents Today: **" + summary.get("incidents_today") + "**\n";
 		status_text = status_text + "📉 Overloaded Members: **" + summary.get("overloaded_members") + "**\n\n";
-		
 		// Health score emoji
 		health_emoji = "🟢";
 		if(health_score < 70)
@@ -50,7 +38,6 @@ try
 			health_emoji = "🔴";
 		}
 		status_text = status_text + health_emoji + " **Health Score: " + health_score + "/100**";
-		
 		response.put("text",status_text);
 	}
 	else if(command == "risks")
@@ -60,38 +47,63 @@ try
 		[
 			url: BACKEND_URL + "/ops/risks"
 			type: GET
+			detailed: false
+			connection-timeout: 10000
 		];
-		info api_response;
-		
+		info "API Response: " + api_response;
 		count = api_response.get("count");
 		tasks = api_response.get("tasks");
 		ai_analysis = api_response.get("ai_analysis");
-		
 		risks_text = "⚠️ **Tasks At Risk: " + count + "**\n\n";
-		
 		// Show top 3 at-risk tasks
 		i = 0;
-		for each task in tasks
+		for each  task in tasks
 		{
 			i = i + 1;
-			risks_text = risks_text + i + ". **" + task.get("title") + "**\n";
-			risks_text = risks_text + "   Owner: " + task.get("owner") + "\n";
-			risks_text = risks_text + "   Status: " + task.get("status") + " | Priority: " + task.get("priority") + "\n\n";
-			
+			title = task.get("title");
+			if(title == null)
+			{
+				title = "Untitled";
+			}
+			owner = task.get("owner");
+			if(owner == null)
+			{
+				owner = "Unassigned";
+			}
+			status = task.get("status");
+			if(status == null)
+			{
+				status = "unknown";
+			}
+			priority = task.get("priority");
+			if(priority == null)
+			{
+				priority = "0";
+			}
+			risks_text = risks_text + i + ". **" + title + "**\n";
+			risks_text = risks_text + "   Owner: " + owner + "\n";
+			risks_text = risks_text + "   Status: " + status + " | Priority: " + priority + "\n\n";
 			if(i == 3)
 			{
 				break;
 			}
 		}
-		
-		// AI analysis summary
+		// AI analysis summary - shortened for Cliq display
 		analysis = ai_analysis.get("analysis");
-		if(analysis.length() > 300)
+		if(analysis == null)
 		{
-			analysis = analysis.subString(0,297) + "...";
+			analysis = "Analysis not available.";
+		}
+		else if(analysis.length() > 200)
+		{
+			analysis = analysis.subString(0,197) + "...";
 		}
 		risks_text = risks_text + "\n🤖 **AI Analysis:**\n" + analysis;
-		
+		// Ensure text is not too long for Cliq
+		if(risks_text.length() > 1000)
+		{
+			risks_text = risks_text.subString(0,997) + "...";
+		}
 		response.put("text",risks_text);
 	}
 	else if(command == "overload")
@@ -101,29 +113,57 @@ try
 		[
 			url: BACKEND_URL + "/ops/overload"
 			type: GET
+			detailed: false
+			connection-timeout: 10000
 		];
-		info api_response;
-		
+		info "API Response: " + api_response;
 		count = api_response.get("count");
 		users = api_response.get("users");
-		
-		overload_text = "📉 **Overloaded Team Members: " + count + "**\n\n";
-		
-		if(count == 0)
+		overload_text = "📉 Overloaded Team Members: " + count + "\n\n";
+		if(count == 0 || users == null || users.size() == 0)
 		{
-			overload_text = overload_text + "✅ No team members are overloaded. Great work! 🎉";
+			overload_text = overload_text + "✅ No team members are overloaded. Great work!";
 		}
 		else
 		{
-			for each user_data in users
+			for each  user_data in users
 			{
-				overload_text = overload_text + "👤 **" + user_data.get("user_id") + "**\n";
-				overload_text = overload_text + "   ⏱️ Total Hours: " + user_data.get("total_hours") + "\n";
-				overload_text = overload_text + "   🗓️ Meetings: " + user_data.get("total_meetings") + "\n";
-				overload_text = overload_text + "   🔢 Active Tasks: " + user_data.get("active_tasks") + "\n\n";
+				user_id = user_data.get("user_id");
+				if(user_id == null)
+				{
+					user_id = "Unknown";
+				}
+				total_hours = user_data.get("total_hours");
+				if(total_hours == null)
+				{
+					total_hours = "0";
+				}
+				else
+				{
+					total_hours = total_hours.toString();
+				}
+				total_meetings = user_data.get("total_meetings");
+				if(total_meetings == null)
+				{
+					total_meetings = "0";
+				}
+				else
+				{
+					total_meetings = total_meetings.toString();
+				}
+				active_tasks = user_data.get("active_tasks");
+				if(active_tasks == null)
+				{
+					active_tasks = "0";
+				}
+				else
+				{
+					active_tasks = active_tasks.toString();
+				}
+				overload_text = overload_text + "User: " + user_id + "\n";
+				overload_text = overload_text + "Hours: " + total_hours + " | Meetings: " + total_meetings + " | Tasks: " + active_tasks + "\n\n";
 			}
 		}
-		
 		response.put("text",overload_text);
 	}
 	else if(command == "incidents")
@@ -133,19 +173,18 @@ try
 		[
 			url: BACKEND_URL + "/ops/incidents"
 			type: GET
+			detailed: false
+			connection-timeout: 10000
 		];
-		info api_response;
-		
+		info "API Response: " + api_response;
 		count = api_response.get("count");
 		patterns = api_response.get("patterns");
-		
 		incidents_text = "🔥 **Incidents (Last 24h): " + count + "**\n\n";
-		
 		if(patterns.size() > 0)
 		{
 			incidents_text = incidents_text + "🔍 **Detected Patterns:**\n";
 			i = 0;
-			for each pattern in patterns
+			for each  pattern in patterns
 			{
 				i = i + 1;
 				incidents_text = incidents_text + i + ". " + pattern.get("summary") + " (occurred " + pattern.get("occurrence_count") + " times)\n";
@@ -155,7 +194,6 @@ try
 		{
 			incidents_text = incidents_text + "✅ No repeating patterns detected.";
 		}
-		
 		response.put("text",incidents_text);
 	}
 	else if(command == "sprint-delay")
@@ -165,52 +203,75 @@ try
 		[
 			url: BACKEND_URL + "/ops/sprint-delay"
 			type: GET
+			detailed: false
+			connection-timeout: 15000
 		];
-		info api_response;
-		
+		info "API Response: " + api_response;
 		sprint_status = api_response.get("sprint_status");
+		if(sprint_status == null)
+		{
+			sprint_status = "unknown";
+		}
 		overdue_count = api_response.get("overdue_count");
+		if(overdue_count == null)
+		{
+			overdue_count = 0;
+		}
 		blocked_count = api_response.get("blocked_count");
+		if(blocked_count == null)
+		{
+			blocked_count = 0;
+		}
 		incident_impact = api_response.get("incident_impact");
+		if(incident_impact == null)
+		{
+			incident_impact = 0;
+		}
 		overloaded_members = api_response.get("overloaded_members");
+		if(overloaded_members == null)
+		{
+			overloaded_members = 0;
+		}
 		root_cause_analysis = api_response.get("root_cause_analysis");
-		
 		delay_text = "🚨 **Sprint Status: " + sprint_status.toUpperCase() + "**\n\n";
 		delay_text = delay_text + "📊 **Metrics:**\n";
 		delay_text = delay_text + "⏰ Overdue Tasks: " + overdue_count + "\n";
 		delay_text = delay_text + "🚫 Blocked Tasks: " + blocked_count + "\n";
 		delay_text = delay_text + "🔥 Incident Impact: " + incident_impact + " incidents\n";
 		delay_text = delay_text + "📉 Overloaded Members: " + overloaded_members + "\n\n";
-		
 		// Root cause
 		root_cause = root_cause_analysis.get("root_cause");
+		if(root_cause == null)
+		{
+			root_cause = "Unable to determine root cause.";
+		}
 		delay_text = delay_text + "🎯 **Root Cause:**\n" + root_cause + "\n\n";
-		
 		// Recommendations
 		recommendations = api_response.get("recommendations");
 		if(recommendations.size() > 0)
 		{
 			delay_text = delay_text + "👉 **Recommended Actions:**\n";
 			i = 0;
-			for each rec in recommendations
+			for each  rec in recommendations
 			{
 				i = i + 1;
-				if(rec.typeOf() == "STRING")
+				// Check if rec is a map (has action key) or string
+				rec_text = "";
+				if(rec.containKey("action"))
 				{
-					delay_text = delay_text + i + ". " + rec + "\n";
+					rec_text = rec.get("action");
 				}
-				else if(rec.get("action") != null)
+				else
 				{
-					delay_text = delay_text + i + ". " + rec.get("action") + "\n";
+					rec_text = rec.toString();
 				}
-				
+				delay_text = delay_text + i + ". " + rec_text + "\n";
 				if(i == 3)
 				{
 					break;
 				}
 			}
 		}
-		
 		response.put("text",delay_text);
 	}
 	else
@@ -218,7 +279,6 @@ try
 		// Default help
 		response.put("text","Use `/ops help` to see available commands.");
 	}
-	
 	return response;
 }
 catch (e)
@@ -227,3 +287,4 @@ catch (e)
 	response.put("text","⚠️ Error connecting to OpsMind backend. Please check your configuration.");
 	return response;
 }
+return response;

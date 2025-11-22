@@ -1,0 +1,33 @@
+// Message handler for OpsMind Bot
+response = Map();
+
+// Get user message text - 'message' is already the text string
+userMessage = message.toLowerCase();
+
+// Get user name safely
+userName = user.get("first_name");
+if(userName == null)
+{
+	userName = "there";
+}
+
+card = Map();
+card.put("title","OpsMind - AI Operations Intelligence");
+card.put("theme","modern-inline");
+response.put("card",card);
+
+// Check for greetings
+if(userMessage.indexOf("hi") != -1 || userMessage.indexOf("hello") != -1 || userMessage.indexOf("hey") != -1)
+{
+	response.put("text","👋 Hi *" + userName + "*! I'm OpsMind, your AI operations assistant.\n\n💡 **Quick Commands:**\n• `/ops status` - Team operations overview\n• `/ops sprint-delay` - AI sprint analysis\n• `/ops help` - See all commands\n\nTry typing `/ops` in any chat to get started!");
+}
+else if(userMessage.indexOf("help") != -1 || userMessage.indexOf("command") != -1)
+{
+	response.put("text","📋 **Available Commands:**\n\n• `/ops status` - Overall team metrics\n• `/ops risks` - Tasks at risk\n• `/ops overload` - Workload analysis\n• `/ops incidents` - Incident patterns\n• `/ops sprint-delay` - AI sprint delay analysis\n• `/ops help` - Command help\n\nType any of these commands in **any Cliq chat** to use them!");
+}
+else
+{
+	response.put("text","🤖 I'm OpsMind! I can help you monitor operations.\n\n💬 Try:\n• Asking me about **commands**\n• Typing `/ops status` in any chat\n• Checking the **OpsMind Widget**\n\nWhat would you like to know?");
+}
+
+return response;
