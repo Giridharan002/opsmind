@@ -8,17 +8,18 @@ class AIEngine {
       return { analysis: 'No tasks at risk currently.', recommendations: [] };
     }
 
-    const prompt = `You are an AI operations analyst. Analyze these at-risk tasks and provide insights:
+    // Limit to top 3 tasks and only essential fields
+    const simplified = atRiskTasks.slice(0, 3).map(t => ({
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      owner: t.owner
+    }));
 
-Tasks at risk:
-${JSON.stringify(atRiskTasks, null, 2)}
+    const prompt = `Analyze these ${simplified.length} at-risk tasks in 100 words max:
+${JSON.stringify(simplified)}
 
-Provide:
-1. Why these tasks are at risk
-2. Common patterns
-3. Top 3 actionable recommendations
-
-Keep it concise and actionable.`;
+Provide: 1) Why at risk 2) Pattern 3) Top action`;
 
     try {
       const model = genAI.getGenerativeModel({ model: process.env.AI_MODEL || 'gemini-1.5-flash' });
@@ -37,16 +38,15 @@ Keep it concise and actionable.`;
       return { analysis: 'No overloaded team members detected.', recommendations: [] };
     }
 
-    const prompt = `Analyze workload overload for these team members:
+    const simplified = overloadedUsers.slice(0, 2).map(u => ({
+      user: u.user_id,
+      hours: u.total_hours,
+      meetings: u.total_meetings
+    }));
 
-${JSON.stringify(overloadedUsers, null, 2)}
-
-Provide:
-1. Severity assessment
-2. Impact on team productivity
-3. Recommended actions
-
-Be specific and actionable.`;
+    const prompt = `Analyze workload in 80 words:
+${JSON.stringify(simplified)}
+Severity? Impact? Action?`;
 
     try {
       const model = genAI.getGenerativeModel({ model: process.env.AI_MODEL || 'gemini-1.5-flash' });
@@ -60,18 +60,12 @@ Be specific and actionable.`;
   }
 
   async analyzeIncidents(incidents, patterns) {
-    const prompt = `Analyze these incidents and patterns:
-
-Recent incidents:
-${JSON.stringify(incidents.slice(0, 10), null, 2)}
-
-Detected patterns:
-${JSON.stringify(patterns, null, 2)}
-
-Provide:
-1. Root cause analysis
-2. Recurring patterns
-3. Prevention recommendations`;
+    const simplified = incidents.slice(0, 5).map(i => ({
+      title: i.title,
+      severity: i.severity
+    }));
+    
+    const prompt = `Analyze in 80 words:\nIncidents: ${JSON.stringify(simplified)}\nPatterns: ${patterns.length} detected\nRoot cause? Prevention?`;
 
     try {
       const model = genAI.getGenerativeModel({ model: process.env.AI_MODEL || 'gemini-1.5-flash' });
@@ -85,23 +79,16 @@ Provide:
   }
 
   async analyzeSprintDelay(data) {
-    const prompt = `You are analyzing why a sprint is delayed. Here's the data:
-
-Overdue tasks: ${data.overdue.length}
-${JSON.stringify(data.overdue.slice(0, 5), null, 2)}
-
-Blocked tasks: ${data.blocked.length}
-${JSON.stringify(data.blocked.slice(0, 5), null, 2)}
-
-Recent incidents: ${data.incidents.length}
-Overloaded team members: ${data.overloaded.length}
-
-Provide a clear root cause analysis explaining:
-1. PRIMARY reason for the delay
-2. Contributing factors
-3. Specific actionable recommendations (be very specific - include task IDs, names)
-
-Format as JSON with keys: root_cause, contributing_factors, recommendations (array)`;
+    // Simplify data to reduce AI processing time
+    const summary = {
+      overdue: data.overdue.length,
+      blocked: data.blocked.length,
+      incidents: data.incidents.length,
+      overloaded: data.overloaded.length,
+      sample_tasks: data.overdue.slice(0, 3).map(t => t.title)
+    };
+    
+    const prompt = `Sprint delayed. Data: ${JSON.stringify(summary)}\nIn 150 words: Root cause? Top 3 actions? JSON format: {root_cause:"", recommendations:[]}`;
 
     try {
       const model = genAI.getGenerativeModel({ model: process.env.AI_MODEL || 'gemini-1.5-flash' });

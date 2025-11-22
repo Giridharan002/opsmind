@@ -48,7 +48,8 @@ class OpsController {
   async getRisks(req, res) {
     try {
       const atRisk = await Task.findAtRisk();
-      const analysis = await aiEngine.analyzeRisks(atRisk);
+      // Keep AI analysis for risks but make it faster by limiting context
+      const analysis = await aiEngine.analyzeRisks(atRisk.slice(0, 5)); // Only analyze top 5
 
       res.json({
         count: atRisk.length,
@@ -66,13 +67,12 @@ class OpsController {
   async getOverload(req, res) {
     try {
       const overloaded = await TimeLog.findOverloaded();
-      // Temporarily disable AI analysis for faster response in Cliq
-      // const analysis = await aiEngine.analyzeOverload(overloaded);
+      const analysis = await aiEngine.analyzeOverload(overloaded);
 
       res.json({
         count: overloaded.length,
         users: overloaded,
-        // ai_analysis: analysis,
+        ai_analysis: analysis,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -127,12 +127,12 @@ class OpsController {
       const overdue = tasks.filter(t => new Date(t.due_date) < new Date() && t.status !== 'done');
       const blocked = tasks.filter(t => t.status === 'blocked');
 
-      // AI root cause analysis
+      // AI root cause analysis - limit data for faster response
       const rootCause = await aiEngine.analyzeSprintDelay({
-        overdue,
-        blocked,
-        incidents,
-        overloaded: timelogs
+        overdue: overdue.slice(0, 5), // Top 5 overdue
+        blocked: blocked.slice(0, 5), // Top 5 blocked
+        incidents: incidents.slice(0, 5), // Recent 5 incidents
+        overloaded: timelogs.slice(0, 3) // Top 3 overloaded
       });
 
       res.json({
