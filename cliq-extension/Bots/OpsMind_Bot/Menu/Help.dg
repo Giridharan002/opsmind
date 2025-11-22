@@ -1,0 +1,33 @@
+response = Map();
+
+try 
+{
+	bot = Map();
+	bot.put("name","OpsMind Bot");
+	bot.put("image","https://i.imgur.com/OpsMind.png");
+	response.put("bot",bot);
+	
+	card = Map();
+	card.put("title","OpsMind Commands");
+	card.put("theme","modern-inline");
+	response.put("card",card);
+	
+	help_text = "**Available Commands:**\n\n";
+	help_text = help_text + "📊 `/ops status` - Get overall team operations status\n";
+	help_text = help_text + "⚠️ `/ops risks` - View tasks at risk with AI analysis\n";
+	help_text = help_text + "📉 `/ops overload` - Check team workload overload\n";
+	help_text = help_text + "🔥 `/ops incidents` - Analyze incident patterns\n";
+	help_text = help_text + "🚨 `/ops sprint-delay` - **(KILLER FEATURE)** Find out why your sprint is delayed!\n";
+	help_text = help_text + "\n**Widget:**\nOpen the **OpsMind Widget** for an interactive dashboard with charts and tabs!\n";
+	help_text = help_text + "\n**Integrations:**\nOpsMind automatically monitors Monday.com, Zenduty, Jibble, and more!";
+	
+	response.put("text",help_text);
+	
+	return response;
+}
+catch (e)
+{
+	info e;
+	response.put("text","⚠️ Oops! Something went wrong. Please try again.");
+	return response;
+}

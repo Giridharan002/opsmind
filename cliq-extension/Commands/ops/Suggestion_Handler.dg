@@ -1,0 +1,44 @@
+// Command suggestion handler for /ops
+response = Map();
+
+suggestions = list();
+
+suggestions.add({
+	"title": "/ops status",
+	"description": "Get overall team operations status",
+	"icon": "https://i.imgur.com/status.png"
+});
+
+suggestions.add({
+	"title": "/ops risks",
+	"description": "View tasks at risk with AI analysis",
+	"icon": "https://i.imgur.com/warning.png"
+});
+
+suggestions.add({
+	"title": "/ops overload",
+	"description": "Check team workload overload",
+	"icon": "https://i.imgur.com/overload.png"
+});
+
+suggestions.add({
+	"title": "/ops incidents",
+	"description": "Analyze incident patterns",
+	"icon": "https://i.imgur.com/fire.png"
+});
+
+suggestions.add({
+	"title": "/ops sprint-delay",
+	"description": "🌟 Find out why your sprint is delayed (AI-powered)",
+	"icon": "https://i.imgur.com/sprint.png"
+});
+
+suggestions.add({
+	"title": "/ops help",
+	"description": "Show all available commands",
+	"icon": "https://i.imgur.com/help.png"
+});
+
+response.put("suggestions", suggestions);
+
+return response;

@@ -1,0 +1,45 @@
+// Message Action: Flag Task at Risk
+// This allows users to flag a task mentioned in a message as at-risk
+
+BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+
+response = Map();
+
+try
+{
+	// Get message content
+	message_text = message.get("text");
+	message_sender = message.get("sender").get("name");
+	
+	// Show confirmation form
+	inputs = list();
+	inputs.add({"label":"Task Title","name":"title","value":message_text,"placeholder":"Task description","mandatory":true,"type":"text","max_length":"100"});
+	inputs.add({"label":"Reason for Risk","name":"reason","mandatory":true,"type":"select","options":{
+		{"value":"blocked","label":"Task is Blocked"},
+		{"value":"overdue","label":"Task is Overdue"},
+		{"value":"dependencies","label":"Dependency Issues"},
+		{"value":"resources","label":"Resource Constraints"},
+		{"value":"other","label":"Other"}
+	}});
+	inputs.add({"label":"Owner","name":"owner","value":message_sender,"mandatory":false,"type":"text"});
+	inputs.add({"label":"Notes","name":"notes","mandatory":false,"type":"textarea","max_length":"300"});
+	
+	form = {
+		"type":"form",
+		"title":"⚠️ Flag Task at Risk",
+		"hint":"Mark this task as at-risk in OpsMind",
+		"name":"flag_task_form",
+		"version":1,
+		"button_label":"Flag Task",
+		"actions":{"submit":{"type":"invoke.function","name":"submit_task_flag"}},
+		"inputs":inputs
+	};
+	
+	return form;
+}
+catch(e)
+{
+	info e;
+	response.put("text","⚠️ Error creating task flag form");
+	return response;
+}

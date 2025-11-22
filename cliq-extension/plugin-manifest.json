@@ -1,0 +1,39 @@
+{
+  "name": "OpsMind",
+  "description": "AI-native operations intelligence platform that analyzes tasks, incidents, and workload to provide proactive insights",
+  "version": "1.0.0",
+  "developer": {
+    "name": "Cliqtrix 2025",
+    "email": "team@opsmind.dev"
+  },
+  "icon": "icon.png",
+  "permissions": [
+    "bot.write",
+    "bot.read",
+    "channel.write",
+    "channel.read",
+    "user.read"
+  ],
+  "bot": {
+    "name": "OpsMind",
+    "unique_name": "opsmind_bot",
+    "description": "Your AI operations analyst",
+    "avatar": "bot-avatar.png",
+    "webhook": {
+      "url": "${BACKEND_URL}/cliq/webhook"
+    }
+  },
+  "slash_commands": [
+    {
+      "command": "/ops",
+      "description": "OpsMind operations commands",
+      "hint": "status | risks | overload | incidents | sprint-delay"
+    }
+  ],
+  "message_actions": [
+    {
+      "type": "message_handler",
+      "name": "mention_handler"
+    }
+  ]
+}

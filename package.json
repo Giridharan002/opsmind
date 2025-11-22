@@ -1,0 +1,35 @@
+{
+  "name": "opsmind-backend",
+  "version": "1.0.0",
+  "description": "AI-native operations intelligence platform for Zoho Cliq",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest",
+    "db:init": "node src/db/init.js",
+    "db:seed": "node src/db/init.js --seed",
+    "test:api": "node test/api-test.js",
+    "demo": "node demo/demo-script.js"
+  },
+  "keywords": ["operations", "ai", "cliq", "monitoring"],
+  "author": "Cliqtrix 2025",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "node-cron": "^3.0.3",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "redis": "^4.6.11",
+    "@google/generative-ai": "^0.2.1",
+    "bullmq": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  }
+}

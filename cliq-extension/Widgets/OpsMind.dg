@@ -1,0 +1,288 @@
+// OpsMind Widget - Interactive Dashboard
+// Backend API URL - Replace with your deployed URL
+BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+
+try 
+{
+	// Get the active tab from target
+	id = "Overview";
+	if(target.containKey("id"))
+	{
+		id = target.get("id");
+	}
+	
+	header = Map();
+	footer = Map();
+	sections = list();
+	
+	// Tab configuration
+	tabsList = {
+		{"label":"Overview","id":"Overview"},
+		{"label":"Risks","id":"Risks"},
+		{"label":"Workload","id":"Workload"},
+		{"label":"Incidents","id":"Incidents"},
+		{"label":"Sprint Delay","id":"SprintDelay"}
+	};
+	
+	// OVERVIEW TAB
+	if(id == "Overview")
+	{
+		// Call /ops/status endpoint
+		api_response = invokeurl
+		[
+			url: BACKEND_URL + "/ops/status"
+			type: GET
+		];
+		info api_response;
+		
+		summary = api_response.get("summary");
+		health_score = api_response.get("health_score");
+		
+		header = {"title":"OpsMind - Operations Dashboard","navigation":"new"};
+		
+		// Section 1: Health Score Chart
+		elements1 = list();
+		health_data = {
+			{"label":"Health","value":health_score},
+			{"label":"Issues","value":100 - health_score}
+		};
+		elements1.add({"type":"title","text":"Team Health Score"});
+		elements1.add({"type":"percentage_chart","styles":{"preview":"semi_doughnut"},"data":health_data});
+		elements1.add({"type":"divider"});
+		sections.add({"id":1,"elements":elements1});
+		
+		// Section 2: Metrics
+		elements2 = list();
+		elements2.add({"type":"fields","data":{
+			{"Total Tasks":summary.get("total_tasks")},
+			{"At Risk":summary.get("at_risk")},
+			{"Overdue":summary.get("overdue")},
+			{"Incidents Today":summary.get("incidents_today")},
+			{"Overloaded Members":summary.get("overloaded_members")},
+			{"Health Score":health_score + "/100"}
+		},"style":{"short":false}});
+		elements2.add({"type":"divider"});
+		sections.add({"id":2,"elements":elements2});
+		
+		// Section 3: Quick Actions
+		elements3 = list();
+		elements3.add({"type":"title","text":"Quick Actions"});
+		elements3.add({"type":"buttons","buttons":{
+			{"label":"View Risks","emotion":"negative","type":"invoke.function","name":"widget_navigate","id":"Risks"},
+			{"label":"Check Overload","emotion":"positive","type":"invoke.function","name":"widget_navigate","id":"Workload"},
+			{"label":"Sprint Delay Analysis","emotion":"negative","type":"invoke.function","name":"widget_navigate","id":"SprintDelay"}
+		}});
+		sections.add({"id":3,"elements":elements3});
+		
+		return {"type":"applet","header":header,"sections":sections,"tabs":tabsList,"active_tab":id};
+	}
+	
+	// RISKS TAB
+	else if(id == "Risks")
+	{
+		api_response = invokeurl
+		[
+			url: BACKEND_URL + "/ops/risks"
+			type: GET
+		];
+		
+		count = api_response.get("count");
+		tasks = api_response.get("tasks");
+		ai_analysis = api_response.get("ai_analysis");
+		
+		header = {"title":"Tasks At Risk: " + count,"navigation":"new"};
+		
+		// Display tasks as cards
+		dataList = list();
+		for each task in tasks
+		{
+			title = task.get("title");
+			if(title.length() >= 50)
+			{
+				title = title.subString(0,47) + "..";
+			}
+			
+			description = "Owner: " + task.get("owner") + "\nStatus: " + task.get("status") + " | Priority: " + task.get("priority");
+			
+			eachData = Map();
+			eachData.put("title",title);
+			eachData.put("description",description);
+			eachData.put("image_url","https://i.imgur.com/task_risk.png");
+			dataList.add(eachData);
+		}
+		
+		elements1 = list();
+		if(dataList.size() > 0)
+		{
+			elements1.add({"type":"cards","data":dataList,"style":{"view":"gallery","size":"small"}});
+			elements1.add({"type":"divider"});
+		}
+		else
+		{
+			elements1.add({"type":"activity","title":"No tasks at risk! 🎉","description":"Your team is on track!","image_url":"https://i.imgur.com/success.png"});
+		}
+		sections.add({"id":1,"elements":elements1});
+		
+		// AI Analysis
+		analysis = ai_analysis.get("analysis");
+		if(analysis.length() > 500)
+		{
+			analysis = analysis.subString(0,497) + "...";
+		}
+		elements2 = list();
+		elements2.add({"type":"title","text":"🤖 AI Analysis"});
+		elements2.add({"type":"text","text":analysis});
+		sections.add({"id":2,"elements":elements2});
+		
+		return {"type":"applet","header":header,"sections":sections,"tabs":tabsList,"active_tab":id};
+	}
+	
+	// WORKLOAD TAB
+	else if(id == "Workload")
+	{
+		api_response = invokeurl
+		[
+			url: BACKEND_URL + "/ops/overload"
+			type: GET
+		];
+		
+		count = api_response.get("count");
+		users = api_response.get("users");
+		
+		header = {"title":"Overloaded Members: " + count,"navigation":"new"};
+		
+		elements1 = list();
+		if(count == 0)
+		{
+			elements1.add({"type":"activity","title":"Perfect Balance! ⚖️","description":"No team members are overloaded","image_url":"https://i.imgur.com/balance.png"});
+		}
+		else
+		{
+			for each user_data in users
+			{
+				elements1.add({"type":"fields","data":{
+					{"User":user_data.get("user_id")},
+					{"Total Hours":user_data.get("total_hours")},
+					{"Meetings":user_data.get("total_meetings")},
+					{"Active Tasks":user_data.get("active_tasks")}
+				},"style":{"short":false}});
+				elements1.add({"type":"divider"});
+			}
+		}
+		sections.add({"id":1,"elements":elements1});
+		
+		return {"type":"applet","header":header,"sections":sections,"tabs":tabsList,"active_tab":id};
+	}
+	
+	// INCIDENTS TAB
+	else if(id == "Incidents")
+	{
+		api_response = invokeurl
+		[
+			url: BACKEND_URL + "/ops/incidents"
+			type: GET
+		];
+		
+		count = api_response.get("count");
+		patterns = api_response.get("patterns");
+		
+		header = {"title":"Incidents (24h): " + count,"navigation":"new"};
+		
+		elements1 = list();
+		elements1.add({"type":"title","text":"Detected Patterns"});
+		
+		if(patterns.size() == 0)
+		{
+			elements1.add({"type":"activity","title":"No Patterns Found ✅","description":"No repeating incidents detected","image_url":"https://i.imgur.com/check.png"});
+		}
+		else
+		{
+			for each pattern in patterns
+			{
+				elements1.add({"type":"text","text":"🔥 **" + pattern.get("summary") + "**\nOccurred " + pattern.get("occurrence_count") + " times"});
+				elements1.add({"type":"divider"});
+			}
+		}
+		sections.add({"id":1,"elements":elements1});
+		
+		return {"type":"applet","header":header,"sections":sections,"tabs":tabsList,"active_tab":id};
+	}
+	
+	// SPRINT DELAY TAB (KILLER FEATURE)
+	else if(id == "SprintDelay")
+	{
+		api_response = invokeurl
+		[
+			url: BACKEND_URL + "/ops/sprint-delay"
+			type: GET
+		];
+		
+		sprint_status = api_response.get("sprint_status");
+		overdue_count = api_response.get("overdue_count");
+		blocked_count = api_response.get("blocked_count");
+		incident_impact = api_response.get("incident_impact");
+		overloaded_members = api_response.get("overloaded_members");
+		root_cause_analysis = api_response.get("root_cause_analysis");
+		
+		header = {"title":"Sprint Status: " + sprint_status.toUpperCase(),"navigation":"new"};
+		
+		// Metrics
+		elements1 = list();
+		elements1.add({"type":"fields","data":{
+			{"Overdue Tasks":overdue_count},
+			{"Blocked Tasks":blocked_count},
+			{"Incident Impact":incident_impact + " incidents"},
+			{"Overloaded Members":overloaded_members}
+		},"style":{"short":false}});
+		elements1.add({"type":"divider"});
+		sections.add({"id":1,"elements":elements1});
+		
+		// Root Cause
+		elements2 = list();
+		root_cause = root_cause_analysis.get("root_cause");
+		elements2.add({"type":"title","text":"🎯 Root Cause Analysis"});
+		elements2.add({"type":"text","text":root_cause});
+		elements2.add({"type":"divider"});
+		sections.add({"id":2,"elements":elements2});
+		
+		// Recommendations
+		recommendations = api_response.get("recommendations");
+		if(recommendations.size() > 0)
+		{
+			elements3 = list();
+			elements3.add({"type":"title","text":"👉 Recommended Actions"});
+			
+			i = 0;
+			for each rec in recommendations
+			{
+				i = i + 1;
+				rec_text = "";
+				if(rec.typeOf() == "STRING")
+				{
+					rec_text = rec;
+				}
+				else if(rec.get("action") != null)
+				{
+					rec_text = rec.get("action");
+				}
+				
+				elements3.add({"type":"text","text":i + ". " + rec_text});
+				
+				if(i == 5)
+				{
+					break;
+				}
+			}
+			sections.add({"id":3,"elements":elements3});
+		}
+		
+		return {"type":"applet","header":header,"sections":sections,"tabs":tabsList,"active_tab":id};
+	}
+}
+catch (e)
+{
+	info e;
+	return {"type":"applet","data_type":"info","info":{"title":"OpsMind Backend Offline","description":"Unable to connect to OpsMind backend. Please check your configuration.","image_url":"https://i.imgur.com/error.png"}};
+}
+
+return Map();

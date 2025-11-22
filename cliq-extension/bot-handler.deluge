@@ -1,0 +1,297 @@
+// OpsMind Bot - Main Handler
+// Handles slash commands and bot interactions
+
+info Map opsmindBot(Map arguments) {
+    // Get command and subcommand
+    command = arguments.get("command");
+    subCommand = arguments.get("selections").get(0);
+    
+    info response;
+    
+    if(command.equalsIgnoreCase("/ops")) {
+        if(subCommand.equalsIgnoreCase("status")) {
+            response = getOpsStatus();
+        }
+        else if(subCommand.equalsIgnoreCase("risks")) {
+            response = getOpsRisks();
+        }
+        else if(subCommand.equalsIgnoreCase("overload")) {
+            response = getOpsOverload();
+        }
+        else if(subCommand.equalsIgnoreCase("incidents")) {
+            response = getOpsIncidents();
+        }
+        else if(subCommand.equalsIgnoreCase("sprint-delay")) {
+            response = getSprintDelay();
+        }
+        else {
+            response = getHelpMessage();
+        }
+    }
+    
+    return response;
+}
+
+// Status command
+info getOpsStatus() {
+    backendUrl = zoho.encryption.decrypt("BACKEND_URL");
+    
+    // Call backend API
+    apiResponse = invokeurl [
+        url: backendUrl + "/ops/status"
+        type: GET
+    ];
+    
+    // Build response card
+    card = Map();
+    card.put("theme", "modern-inline");
+    card.put("title", "📊 Operations Status");
+    
+    summary = apiResponse.get("summary");
+    
+    // Build sections
+    sections = List();
+    
+    // Summary section
+    summarySection = Map();
+    summarySection.put("id", 1);
+    summarySection.put("type", "table");
+    summarySection.put("title", "Current Status");
+    
+    tableData = Map();
+    headers = {"Metric", "Count"};
+    rows = List();
+    rows.add({"⚠️ Tasks At Risk", summary.get("at_risk").toString()});
+    rows.add({"⛔ Overdue Tasks", summary.get("overdue").toString()});
+    rows.add({"🔥 Incidents (24h)", summary.get("incidents_today").toString()});
+    rows.add({"📉 Overloaded Members", summary.get("overloaded_members").toString()});
+    
+    tableData.put("headers", headers);
+    tableData.put("rows", rows);
+    summarySection.put("data", tableData);
+    
+    sections.add(summarySection);
+    
+    // Health score section
+    healthSection = Map();
+    healthSection.put("id", 2);
+    healthSection.put("type", "text");
+    healthSection.put("title", "💚 Health Score");
+    healthSection.put("text", apiResponse.get("health_score") + "/100");
+    sections.add(healthSection);
+    
+    card.put("sections", sections);
+    
+    // Add action buttons
+    buttons = List();
+    detailsBtn = Map();
+    detailsBtn.put("label", "View Details");
+    detailsBtn.put("type", "open.url");
+    detailsBtn.put("url", backendUrl + "/ops/status");
+    buttons.add(detailsBtn);
+    
+    card.put("buttons", buttons);
+    
+    return {"card": card};
+}
+
+// Risks command
+info getOpsRisks() {
+    backendUrl = zoho.encryption.decrypt("BACKEND_URL");
+    
+    apiResponse = invokeurl [
+        url: backendUrl + "/ops/risks"
+        type: GET
+    ];
+    
+    card = Map();
+    card.put("theme", "modern-inline");
+    card.put("title", "⚠️ Tasks At Risk");
+    
+    sections = List();
+    
+    // Risk count
+    countSection = Map();
+    countSection.put("id", 1);
+    countSection.put("type", "text");
+    countSection.put("text", apiResponse.get("count") + " tasks are currently at risk");
+    sections.add(countSection);
+    
+    // AI Analysis
+    aiSection = Map();
+    aiSection.put("id", 2);
+    aiSection.put("type", "text");
+    aiSection.put("title", "🤖 AI Analysis");
+    analysis = apiResponse.get("ai_analysis");
+    aiSection.put("text", analysis.get("analysis"));
+    sections.add(aiSection);
+    
+    card.put("sections", sections);
+    
+    return {"card": card};
+}
+
+// Overload command
+info getOpsOverload() {
+    backendUrl = zoho.encryption.decrypt("BACKEND_URL");
+    
+    apiResponse = invokeurl [
+        url: backendUrl + "/ops/overload"
+        type: GET
+    ];
+    
+    card = Map();
+    card.put("theme", "modern-inline");
+    card.put("title", "📉 Workload Analysis");
+    
+    sections = List();
+    
+    // Overload info
+    infoSection = Map();
+    infoSection.put("id", 1);
+    infoSection.put("type", "text");
+    infoSection.put("text", apiResponse.get("count") + " team members are overloaded");
+    sections.add(infoSection);
+    
+    // AI Analysis
+    aiSection = Map();
+    aiSection.put("id", 2);
+    aiSection.put("type", "text");
+    aiSection.put("title", "🤖 AI Analysis");
+    analysis = apiResponse.get("ai_analysis");
+    aiSection.put("text", analysis.get("analysis"));
+    sections.add(aiSection);
+    
+    card.put("sections", sections);
+    
+    return {"card": card};
+}
+
+// Incidents command
+info getOpsIncidents() {
+    backendUrl = zoho.encryption.decrypt("BACKEND_URL");
+    
+    apiResponse = invokeurl [
+        url: backendUrl + "/ops/incidents"
+        type: GET
+    ];
+    
+    card = Map();
+    card.put("theme", "modern-inline");
+    card.put("title", "🔥 Incident Analysis");
+    
+    sections = List();
+    
+    // Incident count
+    countSection = Map();
+    countSection.put("id", 1);
+    countSection.put("type", "text");
+    countSection.put("text", apiResponse.get("count") + " incidents in the last 24 hours");
+    sections.add(countSection);
+    
+    // Patterns
+    patterns = apiResponse.get("patterns");
+    if(patterns.size() > 0) {
+        patternSection = Map();
+        patternSection.put("id", 2);
+        patternSection.put("type", "text");
+        patternSection.put("title", "🔄 Repeating Patterns");
+        patternSection.put("text", patterns.size() + " incident patterns detected");
+        sections.add(patternSection);
+    }
+    
+    // AI Analysis
+    aiSection = Map();
+    aiSection.put("id", 3);
+    aiSection.put("type", "text");
+    aiSection.put("title", "🤖 AI Analysis");
+    analysis = apiResponse.get("ai_analysis");
+    aiSection.put("text", analysis.get("analysis"));
+    sections.add(aiSection);
+    
+    card.put("sections", sections);
+    
+    return {"card": card};
+}
+
+// Sprint delay command (KILLER FEATURE)
+info getSprintDelay() {
+    backendUrl = zoho.encryption.decrypt("BACKEND_URL");
+    
+    apiResponse = invokeurl [
+        url: backendUrl + "/ops/sprint-delay"
+        type: GET
+    ];
+    
+    card = Map();
+    card.put("theme", "modern-inline");
+    card.put("title", "🚨 Sprint Delay Analysis");
+    
+    sections = List();
+    
+    // Status
+    statusSection = Map();
+    statusSection.put("id", 1);
+    statusSection.put("type", "text");
+    statusSection.put("title", "📊 Current Status");
+    statusText = "Overdue: " + apiResponse.get("overdue_count") + " | Blocked: " + apiResponse.get("blocked_count");
+    statusSection.put("text", statusText);
+    sections.add(statusSection);
+    
+    // Root Cause
+    rootCause = apiResponse.get("root_cause_analysis");
+    causeSection = Map();
+    causeSection.put("id", 2);
+    causeSection.put("type", "text");
+    causeSection.put("title", "🎯 Root Cause");
+    causeSection.put("text", rootCause.get("root_cause"));
+    sections.add(causeSection);
+    
+    // Recommendations
+    recommendations = rootCause.get("recommendations");
+    if(recommendations.size() > 0) {
+        recSection = Map();
+        recSection.put("id", 3);
+        recSection.put("type", "text");
+        recSection.put("title", "👉 Recommended Actions");
+        recText = "";
+        for each rec in recommendations {
+            recText = recText + "• " + rec + "\n";
+        }
+        recSection.put("text", recText);
+        sections.add(recSection);
+    }
+    
+    card.put("sections", sections);
+    
+    return {"card": card};
+}
+
+// Help message
+info getHelpMessage() {
+    return {
+        "text": "Available OpsMind commands:\n" + 
+                "/ops status - Full team health\n" +
+                "/ops risks - Tasks at risk\n" +
+                "/ops overload - Overloaded members\n" +
+                "/ops incidents - Recent incidents\n" +
+                "/ops sprint-delay - Why is sprint delayed?"
+    };
+}
+
+// Bot mention handler
+info mentionHandler(Map arguments) {
+    message = arguments.get("message");
+    
+    if(message.containsIgnoreCase("help")) {
+        return getHelpMessage();
+    }
+    else if(message.containsIgnoreCase("status")) {
+        return getOpsStatus();
+    }
+    else {
+        return {
+            "text": "Hi! I'm OpsMind, your AI operations analyst. Type /ops to see available commands or ask me about 'status', 'risks', or 'help'."
+        };
+    }
+}

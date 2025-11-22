@@ -1,0 +1,102 @@
+// Daily Operations Report Scheduler
+// Runs every day at 9:00 AM
+
+BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+
+try
+{
+	// Call backend for daily summary
+	api_response = invokeurl
+	[
+		url: BACKEND_URL + "/ops/status"
+		type: GET
+	];
+	info api_response;
+	
+	summary = api_response.get("summary");
+	health_score = api_response.get("health_score");
+	
+	// Build report message
+	report_text = "📊 **Daily Operations Report**\n";
+	report_text = report_text + "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+	
+	// Health indicator
+	health_emoji = "🟢";
+	health_status = "Excellent";
+	if(health_score < 70)
+	{
+		health_emoji = "🟡";
+		health_status = "Needs Attention";
+	}
+	if(health_score < 50)
+	{
+		health_emoji = "🔴";
+		health_status = "Critical";
+	}
+	
+	report_text = report_text + health_emoji + " **Health Score: " + health_score + "/100** (" + health_status + ")\n\n";
+	
+	// Metrics
+	report_text = report_text + "**Today's Metrics:**\n";
+	report_text = report_text + "✅ Total Tasks: " + summary.get("total_tasks") + "\n";
+	report_text = report_text + "⚠️ At Risk: " + summary.get("at_risk") + "\n";
+	report_text = report_text + "⏰ Overdue: " + summary.get("overdue") + "\n";
+	report_text = report_text + "🔥 Incidents: " + summary.get("incidents_today") + "\n";
+	report_text = report_text + "📉 Overloaded: " + summary.get("overloaded_members") + "\n\n";
+	
+	// Alerts
+	alerts = list();
+	if(summary.get("at_risk") > 5)
+	{
+		alerts.add("⚠️ High number of tasks at risk!");
+	}
+	if(summary.get("overdue") > 3)
+	{
+		alerts.add("⏰ Multiple overdue tasks detected!");
+	}
+	if(summary.get("incidents_today") > 3)
+	{
+		alerts.add("🔥 Incident spike detected!");
+	}
+	if(summary.get("overloaded_members") > 0)
+	{
+		alerts.add("📉 Team members overloaded!");
+	}
+	
+	if(alerts.size() > 0)
+	{
+		report_text = report_text + "**🚨 Alerts:**\n";
+		for each alert in alerts
+		{
+			report_text = report_text + alert + "\n";
+		}
+		report_text = report_text + "\n";
+	}
+	
+	report_text = report_text + "Use `/ops sprint-delay` to get AI-powered root cause analysis! 🤖";
+	
+	// Post to configured channel (from environment variable)
+	channel_name = "general"; // Default channel
+	if(getenv("DAILY_REPORT_CHANNEL") != null)
+	{
+		channel_name = getenv("DAILY_REPORT_CHANNEL");
+	}
+	
+	// Send message card
+	card = Map();
+	card.put("theme","modern-inline");
+	card.put("title","OpsMind Daily Report");
+	
+	message = Map();
+	message.put("text",report_text);
+	message.put("card",card);
+	
+	// Post to channel
+	zoho.cliq.postToChannel(channel_name,message);
+	
+	info "Daily report sent successfully to #" + channel_name;
+}
+catch(e)
+{
+	info "Error sending daily report: " + e;
+}

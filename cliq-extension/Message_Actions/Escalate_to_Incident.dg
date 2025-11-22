@@ -1,0 +1,45 @@
+// Message Action: Escalate to Incident
+// This allows users to right-click a message and create an incident from it
+
+BACKEND_URL = "https://your-opsmind-backend.vercel.app";
+
+response = Map();
+
+try
+{
+	// Get message content
+	message_text = message.get("text");
+	message_sender = message.get("sender").get("name");
+	message_time = message.get("time");
+	
+	// Show confirmation form
+	inputs = list();
+	inputs.add({"label":"Incident Title","name":"title","placeholder":"Brief description","mandatory":true,"type":"text","max_length":"100"});
+	inputs.add({"label":"Severity","name":"severity","mandatory":true,"type":"select","options":{
+		{"value":"critical","label":"Critical 🔴"},
+		{"value":"high","label":"High 🟠"},
+		{"value":"medium","label":"Medium 🟡"},
+		{"value":"low","label":"Low 🟢"}
+	}});
+	inputs.add({"label":"Description","name":"description","value":message_text,"mandatory":false,"type":"textarea","max_length":"500"});
+	inputs.add({"label":"Reported By","name":"reported_by","value":message_sender,"mandatory":false,"type":"text"});
+	
+	form = {
+		"type":"form",
+		"title":"🚨 Create Incident",
+		"hint":"This will create an incident in OpsMind based on this message",
+		"name":"create_incident_form",
+		"version":1,
+		"button_label":"Create Incident",
+		"actions":{"submit":{"type":"invoke.function","name":"submit_incident"}},
+		"inputs":inputs
+	};
+	
+	return form;
+}
+catch(e)
+{
+	info e;
+	response.put("text","⚠️ Error creating incident form");
+	return response;
+}
